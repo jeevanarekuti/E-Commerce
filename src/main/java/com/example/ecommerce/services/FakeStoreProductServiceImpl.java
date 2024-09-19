@@ -4,9 +4,13 @@ import com.example.ecommerce.dtos.FakeProductServiceDTO;
 import com.example.ecommerce.models.Category;
 import com.example.ecommerce.models.Product;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -19,7 +23,7 @@ public class FakeStoreProductServiceImpl implements ProductService{
         this.restTemplate = restTemplate;
     }
 
-    private Product converrtDtoToProduct(FakeProductServiceDTO fakeProductServiceDTO) {
+    private Product convertDtoToProduct(FakeProductServiceDTO fakeProductServiceDTO) {
         Product product = new Product();
         product.setId(fakeProductServiceDTO.getId());
         product.setDescription(fakeProductServiceDTO.getDescription());
@@ -34,11 +38,23 @@ public class FakeStoreProductServiceImpl implements ProductService{
     @Override
     public Product getProductById(long id) {
         FakeProductServiceDTO fakeProductServiceDTO = restTemplate.getForObject("https://fakestoreapi.com/products/" + id, FakeProductServiceDTO.class);
-        return converrtDtoToProduct(fakeProductServiceDTO);
+        return convertDtoToProduct(fakeProductServiceDTO);
     }
 
     @Override
     public List<Product> getAllProducts() {
-        return List.of();
+        List<Product> products = new ArrayList<>();
+        ResponseEntity<List<FakeProductServiceDTO>> response = restTemplate.exchange(
+                "https://fakestoreapi.com/products",
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<FakeProductServiceDTO>>() {}
+        );
+        List<FakeProductServiceDTO> fakeProductServiceDTOS = response.getBody();
+        for(FakeProductServiceDTO fakeProductServiceDTO : fakeProductServiceDTOS) {
+            System.out.println(fakeProductServiceDTO.getId());
+            products.add(convertDtoToProduct(fakeProductServiceDTO));
+        }
+        return products;
     }
 }
